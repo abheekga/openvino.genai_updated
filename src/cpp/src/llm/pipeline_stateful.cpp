@@ -133,7 +133,8 @@ DecodedResults StatefulLLMPipeline::generate(
         if (is_chat_conversation) {
             m_history.push_back({{"role", "user"}, {"content", prompt}});
             constexpr bool add_generation_prompt = true;
-            auto new_templated_chat_history = m_tokenizer.apply_chat_template(m_history, add_generation_prompt);
+            //auto new_templated_chat_history = m_tokenizer.apply_chat_template(m_history, add_generation_prompt);
+	        auto new_templated_chat_history = m_tokenizer.apply_chat_template_custom(prompt, add_generation_prompt);
             // Do not add special tokens in chat scenario to be aligned with HF.
             auto new_chat_tokens = m_tokenizer.encode(new_templated_chat_history, ov::genai::add_special_tokens(false));
 
