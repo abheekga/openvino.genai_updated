@@ -20,6 +20,7 @@
 #include "circular_buffer_queue.hpp"
 #include "json_utils.hpp"
 #include "utils.hpp"
+#include "llm_styler.hpp"
 
 namespace {
 
@@ -554,6 +555,32 @@ public:
         return std::vector<std::string>(res_data, res_data + res.get_shape()[0]);
     }
 
+    std::string apply_chat_template_custom(std::string& history,
+                                    bool add_generation_prompt,
+                                    const std::string& chat_template) const {
+        nlohmann::json json_body = nlohmann::json::parse(history);
+
+        Qwen3Styler styler;
+        auto tmp_result = styler.BuildPrompt(json_body);
+        bool func_call = std::get<0>(tmp_result);
+        std::string prompt = std::get<1>(tmp_result);
+        std::vector<std::string> additional_data = std::get<2>(tmp_result);
+
+        //
+        // std::cout << "Function Call Needed: " << (func_call ? "Yes" : "No") << std::endl;
+        // std::cout << "Generated Prompt:\n" << prompt << std::endl;
+
+        // <|im_start|>system
+        // You are Qwen, created by Alibaba Cloud. You are a helpful assistant.<|im_end|>
+        // <|im_start|>user
+        // who you are?<|im_end|>
+        // <|im_start|>assistant
+        // <think>
+
+        // </think>
+        return prompt;
+    }
+
     std::string apply_chat_template(ChatHistory history,
                                     bool add_generation_prompt,
                                     const std::string& chat_template) const {
@@ -725,6 +752,12 @@ std::string Tokenizer::apply_chat_template(ChatHistory history,
                                            bool add_generation_prompt,
                                            const std::string& chat_template) const {
     return m_pimpl->apply_chat_template(history, add_generation_prompt, chat_template);
+}
+
+std::string Tokenizer::apply_chat_template_custom(std::string& history,
+                                           bool add_generation_prompt,
+                                           const std::string& chat_template) const {
+    return m_pimpl->apply_chat_template_custom(history, add_generation_prompt, chat_template);
 }
 
 std::string Tokenizer::get_chat_template() const {

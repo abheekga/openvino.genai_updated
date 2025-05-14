@@ -6,6 +6,11 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <rapidjson/document.h>
+#include <chrono>
+#include <map>
+#include <string>
+#include <unordered_set>
 
 #include "openvino/genai/llm_pipeline.hpp"
 #include "openvino/genai/visual_language/pipeline.hpp"
@@ -228,6 +233,23 @@ T pop_or_default(ov::AnyMap& config, const std::string& key, const T& default_va
 const ModelsMap::mapped_type& get_model_weights_pair(const ModelsMap& models_map, const std::string& key);
 
 std::pair<ov::AnyMap, SchedulerConfig> extract_scheduler_config(const ov::AnyMap& properties, std::optional<SchedulerConfig> default_config = std::nullopt);
+
+static inline bool StartsWith(const std::string& str, const std::string& prefix) {
+  return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+}
+static inline bool EndsWith(const std::string& str, const std::string& suffix) {
+  return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+std::string Lstrip(const std::string& str, const std::string& chars = " \t\n\r");
+std::string Rstrip(const std::string& str, const std::string& chars = " \t\n\r");
+std::string Strip(const std::string& str, const std::string& chars = " \t\n\r");
+bool IsValidUTF8(const std::string& str);
+size_t GetWordCount(const std::string& str, const std::string& word);
+
+size_t ReplaceWorld(
+  std::string& str, const std::string& word, const std::string& replace, size_t beg_pos = 0, size_t count = 1);
+
+std::string JsonAddSpaceAfterColonAndComma(const std::string& json);
 
 }  // namespace utils
 }  // namespace genai

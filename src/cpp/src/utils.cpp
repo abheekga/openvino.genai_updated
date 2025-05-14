@@ -6,6 +6,12 @@
 #include <variant>
 #include <fstream>
 #include <memory>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+#include <locale>
+#include <codecvt>
+#include <sstream>
 
 #include "openvino/op/add.hpp"
 #include "openvino/op/divide.hpp"
@@ -530,6 +536,95 @@ std::pair<ov::AnyMap, SchedulerConfig> extract_scheduler_config(const ov::AnyMap
     }
     return {plugin_config, scheduler_config};
 };
+
+std::string Lstrip(const std::string& str, const std::string& chars) {
+  size_t start = str.find_first_not_of(chars);
+  if (start == std::string::npos) {
+    return "";
+  }
+  return str.substr(start);
+}
+
+std::string Rstrip(const std::string& str, const std::string& chars) {
+  size_t end = str.find_last_not_of(chars);
+  if (end == std::string::npos) {
+    return "";
+  }
+  return str.substr(0, end + 1);
+}
+
+std::string Strip(const std::string& str, const std::string& chars) {
+  size_t start = str.find_first_not_of(chars);
+  if (start == std::string::npos) {
+    return "";
+  }
+  size_t end = str.find_last_not_of(chars);
+  return str.substr(start, end - start + 1);
+}
+
+bool IsValidUTF8(const std::string& str) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  try {
+    std::wstring wide = converter.from_bytes(str);
+    // check if have "\xef\xbf\xbd" in the string
+    if (wide.find(L'\ufffd') != std::wstring::npos) {
+      return false;
+    }
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+size_t GetWordCount(const std::string& str, const std::string& word) {
+  size_t count = 0;
+  size_t pos = 0;
+  while ((pos = str.find(word, pos)) != std::string::npos) {
+    count++;
+    pos += word.length();
+  }
+  return count;
+}
+
+size_t ReplaceWorld(
+  std::string& str, const std::string& word, const std::string& replace, size_t beg_pos, size_t count) {
+  size_t pos = beg_pos;
+  while (count > 0 && (pos = str.find(word, pos)) != std::string::npos) {
+    str.replace(pos, word.length(), replace);
+    pos += replace.length();
+    count--;
+  }
+  return pos;
+}
+
+std::string JsonAddSpaceAfterColonAndComma(const std::string& json) {
+  std::ostringstream result;
+  bool in_string = false;
+  bool escape = false;
+
+  for (size_t i = 0; i < json.length(); ++i) {
+    char c = json[i];
+    result << c;
+
+    if (in_string) {
+      if (escape) {
+        escape = false;
+      } else if (c == '\\') {
+        escape = true;
+      } else if (c == '"') {
+        in_string = false;
+      }
+    } else {
+      if (c == '"') {
+        in_string = true;
+      } else if ((c == ':' || c == ',') && (i + 1 < json.length()) && json[i + 1] != ' ') {
+        result << ' ';
+      }
+    }
+  }
+
+  return result.str();
+}
 
 }  // namespace utils
 }  // namespace genai
