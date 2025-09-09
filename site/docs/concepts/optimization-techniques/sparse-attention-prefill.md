@@ -17,7 +17,7 @@ To achieve overall memory savings and generation stage memory and compute optimi
 
 ## Usage with openvino.genai
 The sparse attention prefill can be enabled by setting `.use_sparse_attention` field to `True` in the `openvino_genai.SchedulerConfig` structure that serves as input to most of the `openvino_genai` model pipeline objects.
-Further configuration of the sparse prefill algorithm is done using the `.sparse_attention_config` field of `openvino_genai.SchedulerConfig`, which accepts objects of `openvino_genai.SparseAttentionConfig`. See the [in-code documentation](../../../../src/cpp/include/openvino/genai/sparse_attention.hpp) for the description of individual fields; in particular, the `.mode` field of `SparseAttentionConfig` selects the type of the sparse prefill algorithm to be applied.
+Further configuration of the sparse prefill algorithm is done using the `.sparse_attention_config` field of `openvino_genai.SchedulerConfig`, which accepts objects of `openvino_genai.SparseAttentionConfig`. See the [in-code documentation](https://github.com/openvinotoolkit/openvino.genai/blob/master/src/cpp/include/openvino/genai/sparse_attention.hpp) for the description of individual fields; in particular, the `.mode` field of `SparseAttentionConfig` selects the type of the sparse prefill algorithm to be applied.
 
 Currently two sparse prefill algorithms are supported - the tri-shape algorithm (https://arxiv.org/pdf/2412.10319) and the XAttention algorithm (https://arxiv.org/pdf/2503.16428).
 
