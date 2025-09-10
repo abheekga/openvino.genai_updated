@@ -67,7 +67,7 @@ protobuf==6.32.0
 psutil==7.0.0
 pyarrow==21.0.0
 pycparser==2.22
-pydot==3.0.4
+pydot==4.0.1
 Pygments==2.19.2
 pymoo==0.6.1.5
 pyparsing==3.2.3
