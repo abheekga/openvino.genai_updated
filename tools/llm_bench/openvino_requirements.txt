@@ -18,7 +18,7 @@ datasets==4.0.0
 decorator==5.2.1
 Deprecated==1.2.18
 diffusers==0.35.1
-dill==0.3.8
+dill==0.4.0
 filelock==3.19.1
 fonttools==4.59.2
 frozenlist==1.7.0
