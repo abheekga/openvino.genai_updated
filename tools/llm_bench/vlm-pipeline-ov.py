@@ -158,12 +158,15 @@ def export_gemma():
     processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
     processor.save_pretrained("./models/gemma-3-4b-it")
 
-def run_model_with_benchmark(input, output, ov_model_path, prompt_in):
+def run_model_with_benchmark(input, output, ov_model_path, prompt_in, mem=False):
     print(f"Input Size: {input}, Output Size: {output}")
 
     prompt = f"prompts/{prompt_in}.jsonl"
     
-    os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -lc config.jsonl")
+    if mem:
+        os.system(f"python benchmark_mem.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -mc 2")
+    else:
+        os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt}")
     
     return 0
 
@@ -224,31 +227,31 @@ def main(args):
         model_id = "google/gemma-3-4b-it"
         if not os.path.exists(ov_model_path):
             export_gemma()
-        run_model_with_benchmark(args.input, args.output, ov_model_path, "100")
+        run_model_with_benchmark(args.input, args.output, ov_model_path, "100", mem=args.mem)
     elif args.model=="minicpm-v":
         ov_model_path = "models/MiniCPM-V-2_6"
         model_id = "openbmb/MiniCPM-V-2_6"
         export_model_with_optimum(ov_model_path, model_id)
         # run_model_with_vlm_benchmark(args.input, args.output, ov_model_path, args.height, args.width)
-        run_model_with_benchmark(args.input, args.output, ov_model_path, "100")
+        run_model_with_benchmark(args.input, args.output, ov_model_path, "100", mem=args.mem)
     elif args.model=="llava-llama":
         ov_model_path = "models/llava3-llama-next"
         model_id = "llava-hf/llama3-llava-next-8b-hf"
         export_model_with_optimum(ov_model_path, model_id)
         # run_llava_next(ov_model_path, model_id, args.height, args.width)
-        run_model_with_benchmark(args.input, args.output, ov_model_path, "100")
+        run_model_with_benchmark(args.input, args.output, ov_model_path, "100", mem=args.mem)
     elif args.model=="phi3.5-vision":
         ov_model_path = "models/phi3.5-vision"
         model_id = "microsoft/Phi-3.5-vision-instruct"
         export_model_with_optimum(ov_model_path, model_id)
         # run_model_with_vlm_benchmark(args.input, args.output, ov_model_path, args.height, args.width)
-        run_model_with_benchmark(args.input, args.output, ov_model_path, "100")
+        run_model_with_benchmark(args.input, args.output, ov_model_path, "100", mem=args.mem)
     elif args.model=="phi4-vision":
         ov_model_path = "models/phi4-multimodal-instruct"
         model_id = "microsoft/Phi-4-multimodal-instruct"
         export_model_with_optimum(ov_model_path, model_id)
         # run_model_with_vlm_benchmark(args.input, args.output, ov_model_path, args.height, args.width)
-        run_model_with_benchmark(args.input, args.output, ov_model_path, "100")
+        run_model_with_benchmark(args.input, args.output, ov_model_path, "100", mem=args.mem)
     elif args.model=="llava-video":
         ov_model_path = "models/llava-next-video-7B-ov"
         model_id = "llava-hf/LLaVA-NeXT-Video-7B-hf"
@@ -269,6 +272,8 @@ if __name__ == '__main__':
     parser.add_argument("--output", default=128)
     parser.add_argument("--height", default=512)
     parser.add_argument("--width", default=512)
+    parser.add_argument("--mem", default=False, action="store_true")
     args=parser.parse_args()
     main(args)
+
 
