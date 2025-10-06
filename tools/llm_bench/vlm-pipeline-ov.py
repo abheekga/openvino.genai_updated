@@ -17,7 +17,49 @@ from PIL import Image
 import numpy as np
 import av 
 from huggingface_hub import hf_hub_download
+import datetime
+import psutil
+import threading
+import time
+import subprocess
 
+def measure_memory(output_file_name, stop_event, compile_event):
+    with open(output_file_name, mode='w') as output_file:
+        while not stop_event.is_set():
+            gpu_mem_cmd = r'(((Get-Counter "\GPU Process Memory(*)\Local Usage").CounterSamples | where CookedValue).CookedValue | measure -sum).sum'
+
+            def run_command(command):
+                val = subprocess.run(['powershell', '-Command', command], capture_output=True).stdout.decode("ascii")
+                return float(val.strip().replace(',', '.')) / 2**20
+
+            gpu_memory = run_command(gpu_mem_cmd)
+            cpu_memory = (psutil.virtual_memory().total - psutil.virtual_memory().available) / 1024 / 1024
+            now = datetime.datetime.now()
+            output_file.write(f"Timestamp: {now.time()}\n")
+            output_file.write(f"GPU Memory Usage: {gpu_memory:.2f} MB\n")
+            output_file.write(f"CPU Memory Usage: {cpu_memory:.2f} MB\n")
+            if compile_event.is_set():
+                output_file.write("Compilation finished.\n")
+                compile_event.clear()
+            output_file.flush()  # Ensure data is written immediately
+
+def monitor_compilation_folder(base_folder, compile_event, stop_event):
+    """Monitor for compilation_phase subfolder"""
+    base_path = Path(base_folder)
+    compilation_path = base_path / "compilation_phase"
+    
+    print(f"Monitoring for compilation phase folder: {compilation_path}")
+    
+    while not stop_event.is_set() and not compile_event.is_set():
+        try:
+            if compilation_path.exists() and compilation_path.is_dir():
+                print("Compilation_phase folder detected! Stopping memory monitoring...")
+                compile_event.set()
+                break
+        except Exception as e:
+            print(f"Error checking compilation folder: {e}")
+            
+        time.sleep(0.1)  # Check every 100ms
 
 def read_video_pyav(container, indices):
     '''
@@ -162,9 +204,33 @@ def run_model_with_benchmark(input, output, ov_model_path, prompt_in, mem=False)
     print(f"Input Size: {input}, Output Size: {output}")
 
     prompt = f"prompts/{prompt_in}.jsonl"
+
+    logger = log.getLogger()
     
     if mem:
-        os.system(f"python benchmark_mem.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -mc 2")
+        monitoring_folder = "memory_logs_temp"
+        monitoring_path = Path(monitoring_folder)
+        monitoring_path.mkdir(parents=True, exist_ok=True)
+
+        output_file = f"memory_log_output.txt"
+        stop_event = threading.Event()
+        compile_event = threading.Event()
+        logging_thread = threading.Thread(target=measure_memory, args=(output_file, stop_event, compile_event))
+        folder_thread = threading.Thread(target=monitor_compilation_folder, args=(monitoring_folder, compile_event, stop_event), daemon=True)
+        logging_thread.start()
+        folder_thread.start()
+        time.sleep(2)  # Ensure logging thread starts before benchmark
+        logger.info("Memory logging started.")
+        os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -mc 1 -mc_dir memory_logs_temp")
+        logger.info("Inference completed.")
+        time.sleep(2)  # Give it some time to collect the idle memory just in case
+        stop_event.set()
+        logging_thread.join()
+        folder_thread.join()
+        logger.info("Memory logging stopped.")
+        # os.system(f"python benchmark_mem.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt}")
+        if monitoring_path.exists():
+            shutil.rmtree(monitoring_path)
     else:
         os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt}")
     
@@ -275,5 +341,6 @@ if __name__ == '__main__':
     parser.add_argument("--mem", default=False, action="store_true")
     args=parser.parse_args()
     main(args)
+
 
 
