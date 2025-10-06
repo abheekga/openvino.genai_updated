@@ -221,7 +221,7 @@ def run_model_with_benchmark(input, output, ov_model_path, prompt_in, mem=False)
         folder_thread.start()
         time.sleep(2)  # Ensure logging thread starts before benchmark
         logger.info("Memory logging started.")
-        os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -mc 1 -mc_dir memory_logs_temp")
+        os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -lc config.jsonl -mc 1 -mc_dir memory_logs_temp")
         logger.info("Inference completed.")
         time.sleep(2)  # Give it some time to collect the idle memory just in case
         stop_event.set()
@@ -232,7 +232,7 @@ def run_model_with_benchmark(input, output, ov_model_path, prompt_in, mem=False)
         if monitoring_path.exists():
             shutil.rmtree(monitoring_path)
     else:
-        os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt}")
+        os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -lc config.jsonl")
     
     return 0
 
@@ -341,6 +341,7 @@ if __name__ == '__main__':
     parser.add_argument("--mem", default=False, action="store_true")
     args=parser.parse_args()
     main(args)
+
 
 
 
