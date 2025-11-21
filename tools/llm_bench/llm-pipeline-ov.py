@@ -21,9 +21,9 @@ def run_model(input, output, ov_model_path, model_id, weight="int4", task=False)
     
     if not os.path.exists(ov_model_path):
         if task:
-            os.system(f"optimum-cli export openvino --trust-remote-code --model {model_id} --weight-format {weight} {ov_model_path} --task text-generation-with-past")
+            os.system(f"optimum-cli export openvino --trust-remote-code --model {model_id} --weight-format {weight} --ratio 1.0 --sym --group-size 128 {ov_model_path} --task text-generation-with-past")
         else:
-            os.system(f"optimum-cli export openvino --trust-remote-code --model {model_id} --weight-format {weight} {ov_model_path}")
+            os.system(f"optimum-cli export openvino --trust-remote-code --model {model_id} --weight-format {weight} --ratio 1.0 --sym --group-size 128 {ov_model_path}")
 
     os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt}")
     return 0
@@ -139,3 +139,4 @@ if __name__ == '__main__':
     parser.add_argument("--output", default=128)
     args=parser.parse_args()
     main(args)
+
