@@ -167,6 +167,10 @@ def main(args):
         ov_model_path = "models/llama-3.1-8b"
         model_id = "meta-llama/Llama-3.1-8B"
         run_model(args.input, args.output, ov_model_path, model_id, mem=args.mem)
+    elif args.model=="llama3.0":
+        ov_model_path = "models/llama-3.0-8b"
+        model_id = "meta-llama/Llama-3-8B"
+        run_model(args.input, args.output, ov_model_path, model_id, mem=args.mem)
     elif args.model=="glm":
         ov_model_path = "models/glm-edge-4b"
         model_id = "zai-org/glm-edge-4b-chat"
@@ -225,3 +229,4 @@ if __name__ == '__main__':
     parser.add_argument("--mem", default=False, action="store_true")
     args=parser.parse_args()
     main(args)
+
