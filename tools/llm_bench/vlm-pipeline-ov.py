@@ -208,6 +208,21 @@ def run_model_with_benchmark(input, output, ov_model_path, prompt_in, mem=False)
     logger = log.getLogger()
     
     if mem:
+        folder_path = ov_model_path
+
+        total_size = 0
+        for root, dirs, files in os.walk(folder_path):
+            for name in files:
+                file_path = os.path.join(root, name)
+                try:
+                    total_size += os.path.getsize(file_path)
+                except OSError:
+                    # Skip files that can't be accessed
+                    pass
+
+        size_gb = total_size / (1024 ** 3)
+        print(f"Model size: {size_gb:.2f} GB")
+        
         monitoring_folder = "memory_logs_temp"
         monitoring_path = Path(monitoring_folder)
         monitoring_path.mkdir(parents=True, exist_ok=True)
@@ -231,6 +246,8 @@ def run_model_with_benchmark(input, output, ov_model_path, prompt_in, mem=False)
         # os.system(f"python benchmark_mem.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt}")
         if monitoring_path.exists():
             shutil.rmtree(monitoring_path)
+        with open(output_file, mode='a') as memory_file:
+            memory_file.write(f"Model size: {size_gb:.2f} GB")
     else:
         os.system(f"python benchmark.py -m {ov_model_path} -d GPU -n 3 -ic {output} -pf {prompt} -lc config.jsonl")
     
@@ -341,6 +358,7 @@ if __name__ == '__main__':
     parser.add_argument("--mem", default=False, action="store_true")
     args=parser.parse_args()
     main(args)
+
 
 
 
