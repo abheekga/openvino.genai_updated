@@ -1,4 +1,4 @@
-about-time==4.2.1
+about-time==4.2.2
 aiohappyeyeballs==2.6.1
 aiohttp==3.12.15
 aiosignal==1.4.0
